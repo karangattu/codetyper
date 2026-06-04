@@ -172,9 +172,9 @@ class IDETyper:
 
         # Activate Positron window
         self.activate_positron()
-        time.sleep(0.5)
+        time.sleep(1.5)
         self.toggle_zen_mode()
-        time.sleep(0.5)
+        time.sleep(1.0)
 
     def activate_positron(self):
         applescript = 'tell application "Positron" to activate'
@@ -183,9 +183,12 @@ class IDETyper:
     def toggle_zen_mode(self):
         applescript = (
             'tell application "System Events"\n'
-            '    keystroke "k" using command down\n'
-            '    delay 0.2\n'
-            '    keystroke "z"\n'
+            '    tell process "Positron"\n'
+            '        set frontmost to true\n'
+            '        keystroke "k" using command down\n'
+            '        delay 0.5\n'
+            '        keystroke "z"\n'
+            '    end tell\n'
             'end tell'
         )
         try:

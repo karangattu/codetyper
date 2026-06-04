@@ -116,6 +116,13 @@ codetyper type-code my_script.py --record --record-output demo.mp4 --record-devi
 - Creates realistic "live coding" demonstrations
 - Requires macOS accessibility permissions
 
+## Shiny Applications
+
+Shiny apps (Python or R) are automatically detected and handled:
+- Bypasses block-by-block execution.
+- Automatically launches the app server after typing.
+- Use `--browser-cmd` to run automated browser scripts (e.g., Playwright) against the running app.
+
 ## Keyboard Controls (Terminal Mode)
 
 While CodeTyper is running in terminal mode:

@@ -3,6 +3,7 @@
 import re
 import time
 import subprocess
+from pathlib import Path
 
 from rich.console import Console
 from rich.panel import Panel
@@ -274,18 +275,25 @@ class CodeTyperApp:
             self.config.record_output
         ]
         self.console.print(f"[cyan]Starting screen recording to {self.config.record_output}...[/cyan]")
+        import tempfile
         try:
+            self.record_err_file = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
             self.record_process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
+                stderr=self.record_err_file,
                 text=True
             )
             time.sleep(1.5)
             ret = self.record_process.poll()
             if ret is not None:
-                stderr_text = self.record_process.stderr.read()
+                self.record_err_file.seek(0)
+                stderr_text = self.record_err_file.read()
+                try:
+                    Path(self.record_err_file.name).unlink(missing_ok=True)
+                except Exception:
+                    pass
                 self.console.print(Panel(
                     f"[bold red]FFmpeg exited immediately with code {ret}![/bold red]\n\n"
                     f"[yellow]Error Details:[/yellow]\n{stderr_text.strip()}\n\n"
@@ -312,5 +320,12 @@ class CodeTyperApp:
                     self.record_process.terminate()
                 except Exception:
                     pass
+            finally:
+                if hasattr(self, 'record_err_file'):
+                    try:
+                        self.record_err_file.close()
+                        Path(self.record_err_file.name).unlink(missing_ok=True)
+                    except Exception:
+                        pass
             self.console.print(f"[green]Screen recording saved to {self.config.record_output}[/green]")
             self.record_process = None

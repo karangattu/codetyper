@@ -7,15 +7,12 @@ import select
 import tty
 import termios
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
 import yaml
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.text import Text
 import typer
 
 from config_schema import Config, CodeBlock
@@ -207,7 +204,7 @@ class IDETyper:
             applescript = f'tell application "System Events" to keystroke "{escaped}"'
 
         try:
-            result = subprocess.run(["osascript", "-e", applescript], check=True,
+            subprocess.run(["osascript", "-e", applescript], check=True,
                          capture_output=True, text=True)
         except subprocess.CalledProcessError as e:
             # Check for accessibility permission error
@@ -731,7 +728,6 @@ def parse_script_file(script_file: Path) -> Config:
             output_file = str(script_file)
 
         # Determine comment character based on language
-        comment_char = '#'
 
         # Parse blocks from markdown headers
         blocks = []
@@ -1031,7 +1027,7 @@ print(df.describe())
 
     output.write_text(templates[language])
     typer.secho(f"✓ Created template: {output}", fg=typer.colors.GREEN)
-    typer.secho(f"\nTo use this template:", fg=typer.colors.CYAN)
+    typer.secho("\nTo use this template:", fg=typer.colors.CYAN)
     typer.secho(f"  1. Edit {output} with your code", fg=typer.colors.CYAN)
     typer.secho(f"  2. Run: python codetyper.py type-code {output}", fg=typer.colors.CYAN)
     typer.secho(f"  3. Or with IDE mode: python codetyper.py type-code {output} --ide", fg=typer.colors.CYAN)

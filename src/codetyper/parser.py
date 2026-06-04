@@ -52,7 +52,6 @@ def parse_script_file(script_file: Path) -> Config:
         if not output_file:
             output_file = str(script_file)
 
-        comment_char = '#'
 
         blocks = []
         lines = code_content.split('\n')

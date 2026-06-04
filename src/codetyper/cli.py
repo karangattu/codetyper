@@ -107,7 +107,7 @@ def init(
 
     output.write_text(TEMPLATES[language])
     typer.secho(f"✓ Created template: {output}", fg=typer.colors.GREEN)
-    typer.secho(f"\nTo use this template:", fg=typer.colors.CYAN)
+    typer.secho("\nTo use this template:", fg=typer.colors.CYAN)
     typer.secho(f"  1. Edit {output} with your code", fg=typer.colors.CYAN)
     typer.secho(f"  2. Run: codetyper type-code {output}", fg=typer.colors.CYAN)
     typer.secho(f"  3. Or with IDE mode: codetyper type-code {output} --ide", fg=typer.colors.CYAN)

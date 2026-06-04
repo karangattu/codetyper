@@ -133,11 +133,26 @@ class IDETyper:
         time.sleep(2)
         self.activate_positron()
         time.sleep(0.5)
+        self.toggle_zen_mode()
+        time.sleep(0.5)
 
     def activate_positron(self):
-        """Bring Positron to foreground."""
         applescript = 'tell application "Positron" to activate'
         subprocess.run(["osascript", "-e", applescript], check=True)
+
+    def toggle_zen_mode(self):
+        applescript = (
+            'tell application "System Events"\n'
+            '    keystroke "k" using command down\n'
+            '    delay 0.2\n'
+            '    keystroke "z"\n'
+            'end tell'
+        )
+        try:
+            subprocess.run(["osascript", "-e", applescript], check=True,
+                         capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            self.console.print(f"Warning: Failed to toggle Zen Mode: {e.stderr}")
 
     def type_keystroke(self, char: str):
         """Type a single character into Positron."""

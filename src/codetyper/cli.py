@@ -22,6 +22,10 @@ def type_code(
     ide: bool = typer.Option(False, "--ide", help="Type into Positron IDE instead of terminal"),
     ide_path: Optional[str] = typer.Option(None, "--ide-path", help="Path to Positron.app (default: /Applications/Positron.app)"),
     format_code: bool = typer.Option(False, "--format", help="Format output with Ruff (Python) or styler (R) after typing"),
+    record: bool = typer.Option(False, "--record", help="Enable automatic screen recording with FFmpeg"),
+    record_device: str = typer.Option("1", "--record-device", help="FFmpeg avfoundation video input device index"),
+    record_output: str = typer.Option("recording.mp4", "--record-output", help="Output file for the screen recording"),
+    browser_cmd: Optional[str] = typer.Option(None, "--browser-cmd", help="Browser/test command to run against the running Shiny app"),
 ):
     """
     Type code character-by-character for tutorial recording.
@@ -55,6 +59,14 @@ def type_code(
             config.ide_path = ide_path
         if format_code:
             config.format_output = True
+        if record:
+            config.record = True
+        if record_device:
+            config.record_device = record_device
+        if record_output:
+            config.record_output = record_output
+        if browser_cmd:
+            config.browser_command = browser_cmd
 
         app_instance = CodeTyperApp(config)
         app_instance.run()

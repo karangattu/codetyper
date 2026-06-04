@@ -19,14 +19,13 @@ class CodeTyperApp:
         self.config = config
         self.console = Console()
 
+        self.executor = CodeExecutor(config.language)
         if config.mode == 'ide':
             ide_path = config.ide_path or "/Applications/Positron.app"
             self.engine = IDETyper(config.typing_speed, ide_path)
             self.writer = None
-            self.executor = None
         else:
             self.engine = TypewriterEngine(config.typing_speed)
-            self.executor = CodeExecutor(config.language)
             self.writer = FileWriter(config.output_file)
 
         self.execute_enabled = config.execute_blocks
@@ -80,6 +79,9 @@ class CodeTyperApp:
 
         self.console.print(f"[green]Code typed into: {self.config.output_file}[/green]")
 
+        if self.config.is_shiny and self.execute_enabled:
+            self.executor.execute_shiny(self.config.output_file, self.config.browser_command)
+
     def _run_terminal_mode(self):
         """Run in terminal mode - type to terminal with optional execution."""
         self._display_welcome()
@@ -104,7 +106,7 @@ class CodeTyperApp:
             if self.engine.quit:
                 break
 
-            if block.execute and self.execute_enabled and block.type == 'code':
+            if block.execute and self.execute_enabled and block.type == 'code' and not self.config.is_shiny:
                 self._execute_block(block, typed_code)
 
             if i < len(self.config.blocks) and not self.engine.quit:
@@ -118,6 +120,9 @@ class CodeTyperApp:
                 self.formatter.format_file(self.config.output_file)
 
             self._display_completion()
+
+            if self.config.is_shiny and self.execute_enabled:
+                self.executor.execute_shiny(self.config.output_file, self.config.browser_command)
 
     def _display_welcome(self):
         """Display welcome screen."""

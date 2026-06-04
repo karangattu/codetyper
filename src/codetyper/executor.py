@@ -1,7 +1,8 @@
 """Code execution functionality."""
 
 import subprocess
-from typing import Tuple
+import time
+from typing import Tuple, Optional
 
 from rich.console import Console
 from rich.panel import Panel
@@ -58,3 +59,49 @@ class CodeExecutor:
                     title="Error",
                     border_style="red"
                 ))
+
+    def execute_shiny(self, file_path: str, browser_command: Optional[str] = None):
+        try:
+            if self.language == 'python':
+                cmd = ["python3", "-m", "shiny", "run", "--reload", "--launch-browser", file_path]
+            elif self.language == 'r':
+                cmd = ["Rscript", "-e", f"shiny::runApp('{file_path}', launch.browser = TRUE)"]
+            else:
+                self.console.print(f"Cannot run Shiny app for unsupported language: {self.language}")
+                return
+
+            if browser_command:
+                if self.language == 'python' and "--launch-browser" in cmd:
+                    cmd.remove("--launch-browser")
+                elif self.language == 'r':
+                    cmd = ["Rscript", "-e", f"shiny::runApp('{file_path}', launch.browser = FALSE)"]
+
+                self.console.print(Panel(
+                    "Starting Shiny app server in background...",
+                    border_style="green"
+                ))
+                proc = subprocess.Popen(cmd)
+                try:
+                    time.sleep(3)
+                    self.console.print(Panel(
+                        f"Running browser command: {browser_command}",
+                        border_style="blue"
+                    ))
+                    subprocess.run(browser_command, shell=True)
+                finally:
+                    self.console.print("Terminating Shiny app server...")
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+            else:
+                self.console.print(Panel(
+                    "Starting Shiny app server...\nPress Ctrl+C to stop the server.",
+                    border_style="green"
+                ))
+                subprocess.run(cmd)
+        except KeyboardInterrupt:
+            self.console.print("\nShiny app server stopped.")
+        except Exception as e:
+            self.console.print(f"Error starting Shiny app: {e}")

@@ -168,14 +168,27 @@ class IDETyper:
 
         # Activate Positron window
         self.activate_positron()
-
-        # Give a moment for activation
+        time.sleep(0.5)
+        self.toggle_zen_mode()
         time.sleep(0.5)
 
     def activate_positron(self):
-        """Bring Positron to foreground."""
         applescript = 'tell application "Positron" to activate'
         subprocess.run(["osascript", "-e", applescript], check=True)
+
+    def toggle_zen_mode(self):
+        applescript = (
+            'tell application "System Events"\n'
+            '    keystroke "k" using command down\n'
+            '    delay 0.2\n'
+            '    keystroke "z"\n'
+            'end tell'
+        )
+        try:
+            subprocess.run(["osascript", "-e", applescript], check=True,
+                         capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            self.console.print(f"Warning: Failed to toggle Zen Mode: {e.stderr}")
 
     def type_keystroke(self, char: str):
         """Type a single character into Positron."""
@@ -427,6 +440,52 @@ class CodeExecutor:
                     border_style="red"
                 ))
 
+    def execute_shiny(self, file_path: str, browser_command: Optional[str] = None):
+        try:
+            if self.language == 'python':
+                cmd = ["python3", "-m", "shiny", "run", "--reload", "--launch-browser", file_path]
+            elif self.language == 'r':
+                cmd = ["Rscript", "-e", f"shiny::runApp('{file_path}', launch.browser = TRUE)"]
+            else:
+                self.console.print(f"Cannot run Shiny app for unsupported language: {self.language}")
+                return
+
+            if browser_command:
+                if self.language == 'python' and "--launch-browser" in cmd:
+                    cmd.remove("--launch-browser")
+                elif self.language == 'r':
+                    cmd = ["Rscript", "-e", f"shiny::runApp('{file_path}', launch.browser = FALSE)"]
+
+                self.console.print(Panel(
+                    "Starting Shiny app server in background...",
+                    border_style="green"
+                ))
+                proc = subprocess.Popen(cmd)
+                try:
+                    time.sleep(3)
+                    self.console.print(Panel(
+                        f"Running browser command: {browser_command}",
+                        border_style="blue"
+                    ))
+                    subprocess.run(browser_command, shell=True)
+                finally:
+                    self.console.print("Terminating Shiny app server...")
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+            else:
+                self.console.print(Panel(
+                    "Starting Shiny app server...\nPress Ctrl+C to stop the server.",
+                    border_style="green"
+                ))
+                subprocess.run(cmd)
+        except KeyboardInterrupt:
+            self.console.print("\nShiny app server stopped.")
+        except Exception as e:
+            self.console.print(f"Error starting Shiny app: {e}")
+
 
 class CodeTyperApp:
     """Main application orchestrator."""
@@ -435,15 +494,14 @@ class CodeTyperApp:
         self.config = config
         self.console = Console()
 
+        self.executor = CodeExecutor(config.language)
         # Choose typer based on mode
         if config.mode == 'ide':
             ide_path = config.ide_path or "/Applications/Positron.app"
             self.engine = IDETyper(config.typing_speed, ide_path)
             self.writer = None  # No separate writer in IDE mode
-            self.executor = None  # No separate executor in IDE mode
         else:  # terminal mode
             self.engine = TypewriterEngine(config.typing_speed)
-            self.executor = CodeExecutor(config.language)
             self.writer = FileWriter(config.output_file)
 
         self.execute_enabled = config.execute_blocks
@@ -505,6 +563,9 @@ class CodeTyperApp:
 
         self.console.print(f"[green]Code typed into: {self.config.output_file}[/green]")
 
+        if self.config.is_shiny and self.execute_enabled:
+            self.executor.execute_shiny(self.config.output_file, self.config.browser_command)
+
     def _run_terminal_mode(self):
         """Run in terminal mode - type to terminal with optional execution."""
         self._display_welcome()
@@ -532,8 +593,7 @@ class CodeTyperApp:
             if self.engine.quit:
                 break
 
-            # Execute if configured
-            if block.execute and self.execute_enabled and block.type == 'code':
+            if block.execute and self.execute_enabled and block.type == 'code' and not self.config.is_shiny:
                 self._execute_block(block, typed_code)
 
             # Pause between blocks
@@ -549,6 +609,9 @@ class CodeTyperApp:
                 self.formatter.format_file(self.config.output_file)
 
             self._display_completion()
+
+            if self.config.is_shiny and self.execute_enabled:
+                self.executor.execute_shiny(self.config.output_file, self.config.browser_command)
 
     def _display_welcome(self):
         """Display welcome screen."""
@@ -753,7 +816,13 @@ def parse_script_file(script_file: Path) -> Config:
             mode=metadata.get('mode', 'terminal'),
             ide_path=metadata.get('ide_path'),
             format_output=metadata.get('format_output', False),
+            browser_command=metadata.get('browser_command'),
         )
+
+        if config.is_shiny:
+            parent_dir = Path(config.output_file).parent
+            filename = "app.py" if config.language == 'python' else "app.R"
+            config.output_file = str(parent_dir / filename)
 
         return config
 
@@ -790,8 +859,14 @@ def load_config(config_file: Path) -> Config:
             execute_blocks=metadata.get('execute_blocks', True),
             pause_between_blocks=metadata.get('pause_between_blocks', 2.0),
             blocks=blocks,
-            frontmatter=data.get('frontmatter')
+            frontmatter=data.get('frontmatter'),
+            browser_command=metadata.get('browser_command'),
         )
+
+        if config.is_shiny:
+            parent_dir = Path(config.output_file).parent
+            filename = "app.py" if config.language == 'python' else "app.R"
+            config.output_file = str(parent_dir / filename)
 
         return config
 
@@ -816,6 +891,10 @@ def type_code(
     ide: bool = typer.Option(False, "--ide", help="Type into Positron IDE instead of terminal"),
     ide_path: Optional[str] = typer.Option(None, "--ide-path", help="Path to Positron.app (default: /Applications/Positron.app)"),
     format_code: bool = typer.Option(False, "--format", help="Format output with Ruff (Python) or styler (R) after typing"),
+    record: bool = typer.Option(False, "--record", help="Enable automatic screen recording with FFmpeg"),
+    record_device: str = typer.Option("1", "--record-device", help="FFmpeg avfoundation video input device index"),
+    record_output: str = typer.Option("recording.mp4", "--record-output", help="Output file for the screen recording"),
+    browser_cmd: Optional[str] = typer.Option(None, "--browser-cmd", help="Browser/test command to run against the running Shiny app"),
 ):
     """
     Type code character-by-character for tutorial recording.
@@ -853,6 +932,14 @@ def type_code(
             config.ide_path = ide_path
         if format_code:
             config.format_output = True
+        if record:
+            config.record = True
+        if record_device:
+            config.record_device = record_device
+        if record_output:
+            config.record_output = record_output
+        if browser_cmd:
+            config.browser_command = browser_cmd
 
         app_instance = CodeTyperApp(config)
         app_instance.run()

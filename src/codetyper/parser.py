@@ -126,7 +126,13 @@ def parse_script_file(script_file: Path) -> Config:
             mode=metadata.get('mode', 'terminal'),
             ide_path=metadata.get('ide_path'),
             format_output=metadata.get('format_output', False),
+            browser_command=metadata.get('browser_command'),
         )
+
+        if config.is_shiny:
+            parent_dir = Path(config.output_file).parent
+            filename = "app.py" if config.language == 'python' else "app.R"
+            config.output_file = str(parent_dir / filename)
 
         return config
 
@@ -161,8 +167,14 @@ def load_config(config_file: Path) -> Config:
             execute_blocks=metadata.get('execute_blocks', True),
             pause_between_blocks=metadata.get('pause_between_blocks', 2.0),
             blocks=blocks,
-            frontmatter=data.get('frontmatter')
+            frontmatter=data.get('frontmatter'),
+            browser_command=metadata.get('browser_command'),
         )
+
+        if config.is_shiny:
+            parent_dir = Path(config.output_file).parent
+            filename = "app.py" if config.language == 'python' else "app.R"
+            config.output_file = str(parent_dir / filename)
 
         return config
 

@@ -95,7 +95,20 @@ class Config:
     mode: Literal['terminal', 'ide'] = 'terminal'
     ide_path: Optional[str] = None
     format_output: bool = False
+    record: bool = False
+    record_device: str = "1"
+    record_output: str = "recording.mp4"
+    browser_command: Optional[str] = None
 
     def __post_init__(self):
         if self.blocks is None:
             self.blocks = []
+
+    @property
+    def is_shiny(self) -> bool:
+        full_code = "\n".join(b.code for b in self.blocks)
+        if self.language == 'python':
+            return "import shiny" in full_code or "from shiny" in full_code
+        elif self.language == 'r':
+            return "library(shiny)" in full_code or "require(shiny)" in full_code
+        return False

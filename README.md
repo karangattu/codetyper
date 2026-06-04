@@ -123,6 +123,11 @@ Shiny apps (Python or R) are automatically detected and handled:
 - Automatically launches the app server after typing.
 - Use `--browser-cmd` to run automated browser scripts (e.g., Playwright) against the running app.
 
+Example:
+```bash
+codetyper type-code examples/shiny_python_example.py --browser-cmd "./examples/interact_agent_browser.sh"
+```
+
 ## Keyboard Controls (Terminal Mode)
 
 While CodeTyper is running in terminal mode:

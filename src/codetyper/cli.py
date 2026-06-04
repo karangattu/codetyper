@@ -23,7 +23,7 @@ def type_code(
     ide_path: Optional[str] = typer.Option(None, "--ide-path", help="Path to Positron.app (default: /Applications/Positron.app)"),
     format_code: bool = typer.Option(False, "--format", help="Format output with Ruff (Python) or styler (R) after typing"),
     record: bool = typer.Option(False, "--record", help="Enable automatic screen recording with FFmpeg"),
-    record_device: str = typer.Option("1", "--record-device", help="FFmpeg avfoundation video input device index"),
+    record_device: Optional[str] = typer.Option(None, "--record-device", help="FFmpeg avfoundation video input device index (auto-detects the screen if omitted)"),
     record_output: str = typer.Option("recording.mp4", "--record-output", help="Output file for the screen recording"),
     browser_cmd: Optional[str] = typer.Option(None, "--browser-cmd", help="Browser/test command to run against the running Shiny app"),
 ):

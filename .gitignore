@@ -20,6 +20,10 @@ demo.py
 demo.R
 output.py
 output.R
+demo_from_script.py
+
+# Screen recordings
+recording.mp4
 
 # Great Docs build directory
 great-docs/

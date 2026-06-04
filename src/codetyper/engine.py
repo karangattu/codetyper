@@ -88,14 +88,20 @@ class TypewriterEngine:
                 time.sleep(0.01)
 
             accumulated += char
-            sys.stdout.write(char)
+            if char == '\n' and self.old_terminal_settings:
+                sys.stdout.write('\r\n')
+            else:
+                sys.stdout.write(char)
             sys.stdout.flush()
 
             time.sleep(self.speed * self.speed_multiplier)
 
         if self.skip_block and not self.quit:
             remaining = text[len(accumulated):]
-            sys.stdout.write(remaining)
+            if self.old_terminal_settings:
+                sys.stdout.write(remaining.replace('\n', '\r\n'))
+            else:
+                sys.stdout.write(remaining)
             sys.stdout.flush()
             accumulated += remaining
             self.skip_block = False

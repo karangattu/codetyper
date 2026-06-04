@@ -24,7 +24,7 @@ This will:
 1. Show a welcome screen with controls
 2. Type out Python code character-by-character in the terminal
 3. Execute the code and show output
-4. Save to `/Users/isabella.velasquez/typr-test/demo_from_script.py`
+4. Save to `demo_from_script.py`
 
 ### Option 2: IDE Mode (type into Positron)
 

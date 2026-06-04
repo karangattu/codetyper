@@ -30,7 +30,7 @@ class Config:
     ide_path: Optional[str] = None
     format_output: bool = False
     record: bool = False
-    record_device: str = "1"
+    record_device: Optional[str] = None
     record_output: str = "recording.mp4"
     browser_command: Optional[str] = None
 

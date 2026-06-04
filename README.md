@@ -59,7 +59,11 @@ codetyper type-code examples/example_script.py --ide
 
 ### 3. Record your tutorial
 
-Start your screen recording software (QuickTime, OBS, etc.) and capture CodeTyper typing out your code!
+Either use external recording software (QuickTime, OBS, etc.), or enable automatic screen recording with FFmpeg:
+```bash
+codetyper type-code examples/example_script.py --record
+```
+*Note: Automatic recording requires FFmpeg (`brew install homebrew-ffmpeg/ffmpeg/ffmpeg`) and macOS Screen Recording permissions enabled for your terminal.*
 
 ## Usage
 
@@ -89,6 +93,13 @@ codetyper type-code my_script.py --no-execute
 
 # Override output file
 codetyper type-code my_script.R -o /path/to/output.R
+
+# Record screen automatically to recording.mp4
+codetyper type-code my_script.py --record
+
+# Customize recording output and input device index
+# (the screen capture device is auto-detected; only override if needed)
+codetyper type-code my_script.py --record --record-output demo.mp4 --record-device 2
 ```
 
 ### Terminal Mode vs IDE Mode
